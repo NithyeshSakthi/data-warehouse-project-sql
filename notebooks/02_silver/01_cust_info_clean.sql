@@ -40,3 +40,9 @@ FROM (
   WHERE cst_key IS NOT NULL
 ) t
 WHERE flag_last =1; --- Latest record and depdlicated records are removed
+
+
+
+
+
+
