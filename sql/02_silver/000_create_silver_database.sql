@@ -1,16 +1,16 @@
 -- ============================================================
--- CREATE BRONZE SCHEMA
--- This command creates the Bronze schema inside the catalog
--- 'data_warehose'. The Bronze layer stores raw ingested data
--- exactly as it arrives from the source (S3).
+-- CREATE SILVER SCHEMA
+-- This command creates the Silver schema inside the catalog
+-- 'data_warehose'. The Silver layer stores cleaned data
+-- exactly as it arrives from the raw zone.
 --
 -- data_warehouse:
 --   This is the Unity Catalog catalog where all your schemas
 --   and tables for the project are organized.
 --
--- `1_bronze`:
+-- `2_silver`:
 --   The schema name. Backticks are required because the name
---   starts with a number. This schema will contain all raw
+--   starts with a number. This schema will contain all cleaned
 --   Delta tables such as cust_info_raw, prd_info_raw, etc.
 --
 -- ============================================================
@@ -18,4 +18,4 @@
 
 
 
-CREATE DATABASE IF NOT EXISTS data_warehose.`1_bronze`;
+CREATE DATABASE IF NOT EXISTS data_warehose.`2_silver`;
