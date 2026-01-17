@@ -1,4 +1,44 @@
--- The error indicates missing source table in the SELECT statement.
+
+---============================================================================
+---This script transforms the raw Bronze product data into a clean, deduplicated, 
+---standardized Silver dataset.
+---It loads cleaned data into the Silver table created by the DDL.
+---Key Transformations Performed
+--- 1. Deduplication
+--- 2. Whitespace Cleanup
+---  Removes leading/trailing spaces from names and text fields.
+--- 3. Standardization
+---   Converts inconsistent values into clean categories
+--- 4. Null Handling
+---   Ensures rows with missing cst_key are excluded, since cst_key is the unique identifier.
+--- 5. Insert Overwrite
+---  Replaces the entire Silver table with the latest cleaned dataset.
+---1.1 Finding Duplicates
+---1.2 Checking Unwanted spaces
+---1.3 Low cardinality columns
+--- Checking each columns in the prd_info_raw
+
+---prd_id - Finding duplicate and null values
+
+---prd_key - Contains too many informations like product key with categorical id
+--- Separed the customer key into category id and product key
+
+---prd_nm - no change
+
+---prd_cost - Have few null values
+---cHNAGED NULL INTO 0
+
+---prd_line Standarization required 
+---    'M' THEN 'Mountain', 'R' ->'Road', 'T'  =>'Touring', 'S' => 'Other Sales'
+
+---prd_start_dt missmatching dates & no time required
+
+---prd-end_dt missmatched dates & no time requrired
+ --- dATE modification done
+
+---dwh_create_date
+--- =========================================================================================
+
 USE data_warehose.`2_silver`;
 
 INSERT INTO prd_info_clean(

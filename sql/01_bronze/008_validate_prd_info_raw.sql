@@ -74,6 +74,3 @@ WHERE prd_end_dt < prd_start_dt or prd_start_dt IS NULL;
 
 
 
-
-
-
