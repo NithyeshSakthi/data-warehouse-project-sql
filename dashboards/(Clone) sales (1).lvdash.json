@@ -1,0 +1,831 @@
+{
+  "datasets": [
+    {
+      "name": "32593037",
+      "displayName": "customer",
+      "queryLines": [
+        "\r\n",
+        "SELECT DISTINCT\r\n",
+        "    ROW_NUMBER() OVER (ORDER BY cst_id) AS customer_key,\r\n",
+        "    ci.cst_id AS customer_id,\r\n",
+        "    ci.cst_key AS customer_number,\r\n",
+        "    ci.cst_firstname AS first_name,\r\n",
+        "    ci.cst_lastname AS last_name,\r\n",
+        "    ci.cst_marital_status AS marital_status,\r\n",
+        "    CASE \r\n",
+        "        WHEN ci.cst_gndr IS NOT NULL AND ci.cst_gndr != 'N/A' THEN ci.cst_gndr\r\n",
+        "        WHEN ca.GEN IS NOT NULL AND ca.GEN != 'N/A' THEN ca.GEN\r\n",
+        "        ELSE 'N/A'\r\n",
+        "    END AS gender,\r\n",
+        "    ci.cst_create_date AS create_date,\r\n",
+        "    ca.BDATE AS birthdate,\r\n",
+        "    COALESCE(la.cntry, 'Unknown') AS country\r\n",
+        "FROM data_warehose.`2_silver`.cust_info_clean ci\r\n",
+        "LEFT JOIN data_warehose.`2_silver`.erm_cust_az12_clean ca\r\n",
+        "    ON ci.cst_key = ca.cid\r\n",
+        "LEFT JOIN data_warehose.`2_silver`.erm_loc_a101_clean la\r\n",
+        "    ON ci.cst_key = la.cid;"
+      ]
+    },
+    {
+      "name": "1f907880",
+      "displayName": "products",
+      "queryLines": [
+        "SELECT DISTINCT\r\n",
+        "    ROW_NUMBER() OVER\t(ORDER BY pn.prd_start_dt , pn.prd_key ) AS product_key,\r\n",
+        "\t  pn.prd_id AS product_id,\r\n",
+        "\t  pn.prd_key AS product_key1,\r\n",
+        "\t  pn.prd_nm AS product_name,\r\n",
+        "\t  pc.CAT AS category,\r\n",
+        "\t  pc.SUBCAT AS sub_category,\t\r\n",
+        "\t  pn.prd_cost AS cost,\r\n",
+        "\t  pn.prd_line AS product_line,\r\n",
+        "\t  pn.prd_start_dt AS product_start_dt,\t\r\n",
+        "    pc.maintenance AS maintenance\r\n",
+        "  FROM data_warehose.`2_silver`.prd_info_clean AS pn\r\n",
+        "  LEFT JOIN data_warehose.`2_silver`.erm_px_cat_g1v2_clean AS pc \r\n",
+        "    ON pn.cat_id = pc.id\r\n",
+        "  WHERE pn.prd_end_dt IS NULL;\r\n",
+        "\r\n",
+        "\r\n",
+        "\r\n"
+      ]
+    },
+    {
+      "name": "14448006",
+      "displayName": "sales",
+      "queryLines": [
+        "\r\n",
+        "SELECT\r\n",
+        "    sd.sls_ord_num AS order_number,\r\n",
+        "    pr.product_key ,\r\n",
+        "    cu.customer_id,\r\n",
+        "    sd.sls_order_dt AS order_date,\r\n",
+        "    sd.sls_ship_dt AS shipping_date,\r\n",
+        "    sd.sls_due_dt AS due_date,\r\n",
+        "    sd.sls_sales AS sales,\r\n",
+        "    sd.sls_quantity AS quantity,\r\n",
+        "    sd.sls_price AS price\r\n",
+        "FROM data_warehose.`2_silver`.sales_detail_clean sd \r\n",
+        "LEFT JOIN workspace.default.dim_products pr\r\n",
+        "ON sd.sls_prd_key = pr.product_key1\r\n",
+        "LEFT JOIN workspace.default.dim_customer cu\r\n",
+        "ON sd.sls_cust_id = cu.customer_id;\r\n"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "c0d257a1",
+      "displayName": "Sales",
+      "layout": [
+        {
+          "widget": {
+            "name": "c175262f",
+            "multilineTextboxSpec": {
+              "lines": [
+                "# <span style=\"font-size:24px\">Auto parts E- Commerce Sales Dashboard </span>"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "number-of-customers",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "32593037",
+                  "fields": [
+                    {
+                      "name": "count(customer_key)",
+                      "expression": "COUNT(`customer_key`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "count(customer_key)"
+                }
+              },
+              "frame": {
+                "title": "Number of customers",
+                "showTitle": true
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "average-sales-per-year",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "32593037",
+                  "fields": [
+                    {
+                      "name": "sum(customer_key)",
+                      "expression": "SUM(`customer_key`)"
+                    },
+                    {
+                      "name": "country",
+                      "expression": "`country`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "pie",
+              "encodings": {
+                "angle": {
+                  "fieldName": "sum(customer_key)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "country",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              },
+              "frame": {
+                "title": "Total revenue by country",
+                "showTitle": true
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 2,
+            "width": 4,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "90170fee",
+            "queries": [
+              {
+                "name": "dashboards/01f0fa3a774d194c9e2cf4ed500e3e7f/datasets/01f0fa3a9c081849be121c49890206b4_country",
+                "query": {
+                  "datasetName": "32593037",
+                  "fields": [
+                    {
+                      "name": "country",
+                      "expression": "`country`"
+                    },
+                    {
+                      "name": "country_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "country",
+                    "queryName": "dashboards/01f0fa3a774d194c9e2cf4ed500e3e7f/datasets/01f0fa3a9c081849be121c49890206b4_country"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 4,
+            "width": 2,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "b4b35fc4",
+            "queries": [
+              {
+                "name": "dashboards/01f0fa3a774d194c9e2cf4ed500e3e7f/datasets/01f0fa3ae2ec1f65b8285bb5687b5bf9_product_name",
+                "query": {
+                  "datasetName": "1f907880",
+                  "fields": [
+                    {
+                      "name": "product_name",
+                      "expression": "`product_name`"
+                    },
+                    {
+                      "name": "product_name_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "product_name",
+                    "queryName": "dashboards/01f0fa3a774d194c9e2cf4ed500e3e7f/datasets/01f0fa3ae2ec1f65b8285bb5687b5bf9_product_name"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 5,
+            "width": 2,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "fdcf6263",
+            "queries": [
+              {
+                "name": "dashboards/01f0fa3a774d194c9e2cf4ed500e3e7f/datasets/01f0fa3b232f1e90a57df4c2f2885c86_order_date",
+                "query": {
+                  "datasetName": "14448006",
+                  "fields": [
+                    {
+                      "name": "order_date",
+                      "expression": "`order_date`"
+                    },
+                    {
+                      "name": "order_date_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "order_date",
+                    "queryName": "dashboards/01f0fa3a774d194c9e2cf4ed500e3e7f/datasets/01f0fa3b232f1e90a57df4c2f2885c86_order_date"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 6,
+            "width": 2,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "f6f49814",
+            "queries": [
+              {
+                "name": "dashboards/01f0fa3a774d194c9e2cf4ed500e3e7f/datasets/01f0fa3b232f1e90a57df4c2f2885c86_shipping_date",
+                "query": {
+                  "datasetName": "14448006",
+                  "fields": [
+                    {
+                      "name": "shipping_date",
+                      "expression": "`shipping_date`"
+                    },
+                    {
+                      "name": "shipping_date_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "shipping_date",
+                    "queryName": "dashboards/01f0fa3a774d194c9e2cf4ed500e3e7f/datasets/01f0fa3b232f1e90a57df4c2f2885c86_shipping_date"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 7,
+            "width": 2,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "top-10-products-by-sale",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "14448006",
+                  "fields": [
+                    {
+                      "name": "sum(sales)",
+                      "expression": "SUM(`sales`)"
+                    },
+                    {
+                      "name": "product_key",
+                      "expression": "`product_key`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "product_key",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "y-reversed"
+                    }
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(sales)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "sum(sales)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "frame": {
+                "title": "Top 10 Products by Sale",
+                "showTitle": true
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 9,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "778264ed",
+            "queries": [
+              {
+                "name": "dashboards/01f0fa3a774d194c9e2cf4ed500e3e7f/datasets/01f0fa3ae2ec1f65b8285bb5687b5bf9_cost",
+                "query": {
+                  "datasetName": "1f907880",
+                  "fields": [
+                    {
+                      "name": "cost",
+                      "expression": "`cost`"
+                    },
+                    {
+                      "name": "cost_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "cost",
+                    "queryName": "dashboards/01f0fa3a774d194c9e2cf4ed500e3e7f/datasets/01f0fa3ae2ec1f65b8285bb5687b5bf9_cost"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 8,
+            "width": 2,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "customer-purchase-frequency",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "1f907880",
+                  "fields": [
+                    {
+                      "name": "product_id",
+                      "expression": "`product_id`"
+                    },
+                    {
+                      "name": "product_name",
+                      "expression": "`product_name`"
+                    },
+                    {
+                      "name": "category",
+                      "expression": "`category`"
+                    },
+                    {
+                      "name": "sub_category",
+                      "expression": "`sub_category`"
+                    },
+                    {
+                      "name": "product_start_dt",
+                      "expression": "`product_start_dt`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "product_id",
+                    "title": "product_id",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "type": "integer",
+                    "displayAs": "number",
+                    "visible": true
+                  },
+                  {
+                    "fieldName": "product_name",
+                    "title": "product_name",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true
+                  },
+                  {
+                    "fieldName": "category",
+                    "title": "category",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true
+                  },
+                  {
+                    "fieldName": "sub_category",
+                    "title": "sub_category",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "type": "string",
+                    "displayAs": "string",
+                    "visible": true
+                  },
+                  {
+                    "fieldName": "product_start_dt",
+                    "title": "product_start_dt",
+                    "booleanValues": [
+                      "false",
+                      "true"
+                    ],
+                    "type": "date",
+                    "displayAs": "datetime",
+                    "visible": true
+                  }
+                ]
+              },
+              "invisibleColumns": [
+                {
+                  "numberFormat": "0",
+                  "booleanValues": [
+                    "false",
+                    "true"
+                  ],
+                  "imageUrlTemplate": "{{ @ }}",
+                  "imageTitleTemplate": "{{ @ }}",
+                  "imageWidth": "",
+                  "imageHeight": "",
+                  "linkUrlTemplate": "{{ @ }}",
+                  "linkTextTemplate": "{{ @ }}",
+                  "linkTitleTemplate": "{{ @ }}",
+                  "linkOpenInNewTab": true,
+                  "name": "product_key",
+                  "type": "integer",
+                  "displayAs": "number",
+                  "order": 100000,
+                  "title": "product_key",
+                  "allowSearch": false,
+                  "alignContent": "right",
+                  "allowHTML": false,
+                  "highlightLinks": false,
+                  "useMonospaceFont": false,
+                  "preserveWhitespace": false
+                },
+                {
+                  "booleanValues": [
+                    "false",
+                    "true"
+                  ],
+                  "imageUrlTemplate": "{{ @ }}",
+                  "imageTitleTemplate": "{{ @ }}",
+                  "imageWidth": "",
+                  "imageHeight": "",
+                  "linkUrlTemplate": "{{ @ }}",
+                  "linkTextTemplate": "{{ @ }}",
+                  "linkTitleTemplate": "{{ @ }}",
+                  "linkOpenInNewTab": true,
+                  "name": "product_key1",
+                  "type": "string",
+                  "displayAs": "string",
+                  "order": 100002,
+                  "title": "product_key1",
+                  "allowSearch": false,
+                  "alignContent": "left",
+                  "allowHTML": false,
+                  "highlightLinks": false,
+                  "useMonospaceFont": false,
+                  "preserveWhitespace": false
+                },
+                {
+                  "numberFormat": "0",
+                  "booleanValues": [
+                    "false",
+                    "true"
+                  ],
+                  "imageUrlTemplate": "{{ @ }}",
+                  "imageTitleTemplate": "{{ @ }}",
+                  "imageWidth": "",
+                  "imageHeight": "",
+                  "linkUrlTemplate": "{{ @ }}",
+                  "linkTextTemplate": "{{ @ }}",
+                  "linkTitleTemplate": "{{ @ }}",
+                  "linkOpenInNewTab": true,
+                  "name": "cost",
+                  "type": "integer",
+                  "displayAs": "number",
+                  "order": 100006,
+                  "title": "cost",
+                  "allowSearch": false,
+                  "alignContent": "right",
+                  "allowHTML": false,
+                  "highlightLinks": false,
+                  "useMonospaceFont": false,
+                  "preserveWhitespace": false
+                },
+                {
+                  "booleanValues": [
+                    "false",
+                    "true"
+                  ],
+                  "imageUrlTemplate": "{{ @ }}",
+                  "imageTitleTemplate": "{{ @ }}",
+                  "imageWidth": "",
+                  "imageHeight": "",
+                  "linkUrlTemplate": "{{ @ }}",
+                  "linkTextTemplate": "{{ @ }}",
+                  "linkTitleTemplate": "{{ @ }}",
+                  "linkOpenInNewTab": true,
+                  "name": "product_line",
+                  "type": "string",
+                  "displayAs": "string",
+                  "order": 100007,
+                  "title": "product_line",
+                  "allowSearch": false,
+                  "alignContent": "left",
+                  "allowHTML": false,
+                  "highlightLinks": false,
+                  "useMonospaceFont": false,
+                  "preserveWhitespace": false
+                },
+                {
+                  "booleanValues": [
+                    "false",
+                    "true"
+                  ],
+                  "imageUrlTemplate": "{{ @ }}",
+                  "imageTitleTemplate": "{{ @ }}",
+                  "imageWidth": "",
+                  "imageHeight": "",
+                  "linkUrlTemplate": "{{ @ }}",
+                  "linkTextTemplate": "{{ @ }}",
+                  "linkTitleTemplate": "{{ @ }}",
+                  "linkOpenInNewTab": true,
+                  "name": "maintenance",
+                  "type": "string",
+                  "displayAs": "string",
+                  "order": 100009,
+                  "title": "maintenance",
+                  "allowSearch": false,
+                  "alignContent": "left",
+                  "allowHTML": false,
+                  "highlightLinks": false,
+                  "useMonospaceFont": false,
+                  "preserveWhitespace": false
+                }
+              ],
+              "allowHTMLByDefault": false,
+              "itemsPerPage": 25,
+              "paginationSize": "default",
+              "condensed": true,
+              "withRowNumber": false,
+              "frame": {
+                "title": "Customer Purchase Frequency 20",
+                "showTitle": true
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 15,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "total-profit-cost",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "1f907880",
+                  "fields": [
+                    {
+                      "name": "sum(cost)",
+                      "expression": "SUM(`cost`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(cost)"
+                }
+              },
+              "frame": {
+                "title": "Total Profit Cost",
+                "showTitle": true
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 0,
+            "width": 3,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "sales-distribution-by-product-category",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "1f907880",
+                  "fields": [
+                    {
+                      "name": "category",
+                      "expression": "`category`"
+                    },
+                    {
+                      "name": "sum(cost)",
+                      "expression": "SUM(`cost`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "category",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "y-reversed"
+                    }
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(cost)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "category",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "frame": {
+                "title": "Sales Distribution by Product Category",
+                "showTitle": true
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 9,
+            "width": 3,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}
