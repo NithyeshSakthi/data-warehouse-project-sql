@@ -17,7 +17,7 @@
 
 INSERT OVERWRITE TABLE data_warehose.`2_silver`.cust_info_clean
 SELECT  
-    cst_id,
+    cst_id ,
     cst_key,
     TRIM(cst_firstname) AS cst_firstname,
     TRIM (cst_lastname) AS cst_lastname, --- Remove the spacing 
@@ -38,9 +38,18 @@ FROM (
   ROW_NUMBER() OVER(PARTITION BY cst_id ORDER BY cst_create_date DESC) AS flag_last
   FROM data_warehose.`1_bronze`.cust_info_raw
   WHERE cst_key IS NOT NULL
+    AND cst_key IS NOT NULL
+    AND cst_firstname IS NOT NULL
+    AND cst_lastname IS NOT NULL 
 ) t
 WHERE flag_last =1; --- Latest record and depdlicated records are removed
 
+SELECT *
+FROM data_warehose.`2_silver`.cust_info_clean
+WHERE cst_key = 'SF566';
+
+describe data_warehose.`2_silver`.cust_info_clean;
+describe data_warehose.`2_silver`.sales_detail_clean;
 
 
 

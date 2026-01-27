@@ -28,3 +28,5 @@ FROM data_warehose.`1_bronze`.prd_info_raw;
 SELECT *
 FROM data_warehose.`1_bronze`.prd_info_raw
 LIMIT 10;
+
+select * from prd_info_raw;

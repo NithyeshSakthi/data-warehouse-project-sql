@@ -1,13 +1,13 @@
 -- ============================================================
--- VALIDATION SCRIPT FOR BRONZE TABLE -prd_info_raw
+-- VALIDATION SCRIPT FOR BRONZE TABLE -sales_detail_raw
 -- Purpose: Identify data quality issues before Silver cleaning
 --- Checking Data qulaity issues
----select * FROM data_warehose.`1_bronze`.prd_info_raw;
+---select * FROM data_warehose.`1_bronze`.sales_detail_raw;
 ---This helps to create the DDL for silver Layer and load the cleaned data
 ---1.1 Finding Duplicates
 ---1.2 Checking Unwanted spaces
 ---1.3 Low cardinality columns
---- Checking each columns in the prd_info_raw
+--- Checking each columns in the sales_detail_raw
 
 ---prd_id - Finding duplicate and null values
 
